@@ -41,10 +41,10 @@ def get_shorten_link(data, token):
 def count_clicks(token):
     try:
         url = f"https://clc.li/api/urls?limit=2&page=1&order=date"
-        headers = {"Authorization": "Bearer {token}"}
+        headers = {"Authorization": f"Bearer {token}"}
         response = requests.get(url, headers=headers)
         response.raise_for_status()
-        clicks = response.json().get("data").get("urls")[0].get("clicks")
+        clicks = response.json().get("data").get("urls")[1].get("clicks")
         return clicks
     except requests.exceptions.HTTPError:
         return None
@@ -69,4 +69,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
