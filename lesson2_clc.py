@@ -4,70 +4,67 @@ from dotenv import load_dotenv
 import os
 
 
-def is_bit_link(data):
-    parsed_link = urlparse(data["url"])
-    url = "https://" + parsed_link.netloc + parsed_link.path
-    true_url = False
-    clc_bit_link = False
-    try:
-        response = requests.get(url)
-        response.raise_for_status()
-        if response.ok:
-            true_url = True
-            if "clc.li" in url:
-                clc_bit_link = True
-        return true_url, clc_bit_link
-    except requests.exceptions.HTTPError:
-        return None
-    except Exception:
-        return None
+def is_bit_link(user_url):
+    parsed_url = urlparse(user_url["url"])
+    scheme = "https"
+    url = f"{scheme}://{parsed_url.netloc}{parsed_url.path}"
+    bit_link = False
+    response = requests.get(url)
+    response.raise_for_status()
+    if "clc.li" in url:
+        bit_link = True
+    return bit_link
 
 
-def get_shorten_link(data, token):
+def get_shorten_link(user_url, token):
     url = "https://clc.li/api/url/add"
     headers = {"Authorization": f"Bearer {token}",
                "Content-Type": "application/json"}
-    try:
-        response = requests.post(url, headers=headers, json=data)
-        response.raise_for_status()
-        get_link = response.json().get("shorturl")
-        parsed_link = urlparse(get_link)
-        short_link = parsed_link.netloc + parsed_link.path
-        return short_link
-    except requests.exceptions.HTTPError:
-        return None
+    response = requests.post(url, headers=headers, json=user_url)
+    response.raise_for_status()
+    short_url = response.json().get("shorturl")
+    parsed_short_url = urlparse(short_url)
+    short_link = f"{parsed_short_url.netloc}{parsed_short_url.path}"
+    return short_link
 
 
 def count_clicks(token):
-    try:
-        url = f"https://clc.li/api/urls?limit=2&page=1&order=date"
-        headers = {"Authorization": f"Bearer {token}"}
-        response = requests.get(url, headers=headers)
-        response.raise_for_status()
-        clicks = response.json().get("data").get("urls")[1].get("clicks")
-        return clicks
-    except requests.exceptions.HTTPError:
-        return None
+    url = "https://clc.li/api/urls"
+    params = {
+        "limit": 2,
+        "page": 1,
+        "order": "date"
+    }
+    headers = {"Authorization": f"Bearer {token}"}
+    response = requests.get(url, headers=headers, params=params)
+    response.raise_for_status()
+    clicks = response.json().get("data").get("urls")[1].get("clicks")
+    return clicks
 
 
 def main():
     load_dotenv()
-    token = os.getenv("AUTH_TOKEN")
-    data = {"url": input("Введите URL: ")}
-    check_link = is_bit_link(data)
-    if not check_link:
-        print("Ошибка: Введите действующий url")
-    else:
-        true_url, clc_bit_link = is_bit_link(data)
-        if clc_bit_link:
+    user_url = {"url": input("Введите URL: ")}
+    try:
+        token = os.environ["CLC_LI_TOKEN"]
+        bit_link = is_bit_link(user_url)
+        if bit_link:
             clicks = count_clicks(token)
             print("Всего кликов: ", clicks)
         else:
-            short_link = get_shorten_link(data, token)
+            short_link = get_shorten_link(user_url, token)
             print("Короткая ссылка: ", short_link)
+    except KeyError:
+        print("Ошибка, не найден токен авторизации!")
+    except requests.exceptions.HTTPError:
+        print("Пожалуйста, проверьте URL или токен")
+    except Exception:
+        print("Ошибка: Введите действующий url")
 
 
 if __name__ == "__main__":
     main()
+
+
 
 
