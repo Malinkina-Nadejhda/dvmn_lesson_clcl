@@ -8,11 +8,9 @@ def is_bit_link(user_url):
     parsed_url = urlparse(user_url["url"])
     scheme = "https"
     url = f"{scheme}://{parsed_url.netloc}{parsed_url.path}"
-    bit_link = False
     response = requests.get(url)
     response.raise_for_status()
-    if "clc.li" in url:
-        bit_link = True
+    bit_link = "clc.li" in url
     return bit_link
 
 
@@ -64,6 +62,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
